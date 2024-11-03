@@ -42,8 +42,7 @@ does_contains_at_least_one_component_with_default_change_detection_strategy :: p
 
 File_Read_User_Data :: struct {
 	current_directory:                          string,
-	num_of_files_with_default_change_detection: int, // Number of files containing at least one component with the default change detection strategy.
-	print_filenames:                            bool,
+	num_of_files_with_default_change_detection: int, // Number of files containing at least one component using the default change detection strategy.
 }
 
 on_file_info_read :: proc(
@@ -67,6 +66,10 @@ on_file_info_read :: proc(
 		user_data := (^File_Read_User_Data)(user_data)
 		user_data.num_of_files_with_default_change_detection += 1
 
+		if ODIN_TEST {
+			return
+		}
+
 		file_path, err := filepath.rel(user_data.current_directory, info.fullpath)
 		if err != filepath.Relative_Error.None {
 			error_println(
@@ -77,25 +80,15 @@ on_file_info_read :: proc(
 		}
 		defer delete(file_path)
 
-		if !user_data.print_filenames {
-			return
-		}
-
 		info_println(file_path)
 	}
 
 	return
 }
 
-check_files_with_default_change_detection :: proc(
-	root: string,
-	print_filenames := true,
-) -> (
-	num_of_files_with_default_change_detection: int,
-) {
+print_files_with_default_change_detection :: proc(root: string) -> int {
 	user_data := File_Read_User_Data {
 		current_directory = os.get_current_directory(),
-		print_filenames   = print_filenames,
 	}
 	defer delete(user_data.current_directory)
 
@@ -107,7 +100,7 @@ check_files_with_default_change_detection :: proc(
 main :: proc() {
 	fmt.println("\nFiles with at least one component using change detection set to default:\n")
 
-	num_of_files_with_default_change_detection := check_files_with_default_change_detection(
+	num_of_files_with_default_change_detection := print_files_with_default_change_detection(
 		"src/app",
 	)
 
